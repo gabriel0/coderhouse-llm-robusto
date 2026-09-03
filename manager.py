@@ -39,7 +39,7 @@ class AsyncLLMManager:
                 google_api_key=os.getenv("GOOGLE_API_KEY"),
                 openai_model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
                 anthropic_model=os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest"),
-                google_model=os.getenv("GOOGLE_MODEL", "gemini-2.5-flash"),
+                google_model=os.getenv("GOOGLE_MODEL", "gemini-3.6-flash"),
             )
         except ValidationError as error:
             first = error.errors()[0]
