@@ -1,11 +1,20 @@
 import asyncio
 import sys
 
+from pydantic import ValidationError
+
 from manager import AsyncLLMManager
 from schemas import ChatMessage, ModelParams
 
 
-PROMPT = "¿Qué es la entropía?"
+PROMPT = "¿Qué es la entropía? Respondé en 2 líneas."
+
+
+def demo_validacion() -> None:
+    try:
+        ModelParams(temperature=5)
+    except ValidationError:
+        print("Validación Pydantic: temperature=5 se rechaza antes de llamar a la API.\n")
 
 
 async def run_normal(manager: AsyncLLMManager, messages: list[ChatMessage], params: ModelParams) -> None:
@@ -34,6 +43,7 @@ async def main() -> None:
         sys.exit(1)
 
     print(f"Proveedor activo: {manager.provider.value}\n")
+    demo_validacion()
     messages = [ChatMessage(role="user", content=PROMPT)]
     params = ModelParams(temperature=0.5, max_tokens=2048)
 

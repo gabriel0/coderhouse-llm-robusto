@@ -11,7 +11,7 @@ from google_client import GoogleClient
 from openai_client import OpenAIClient
 from schemas import ChatMessage, LLMConfig, ModelParams, ModelResponse, Provider
 
-
+# Clase para manejar el cliente de LLM
 class AsyncLLMManager:
     """Carga OpenAI, Anthropic o Google según configuración y expone una interfaz unificada."""
 
@@ -19,6 +19,7 @@ class AsyncLLMManager:
         self._config = config
         self._client = self._build_client(config)
 
+    # Método para crear el manager desde el archivo .env
     @classmethod
     def from_env(cls) -> "AsyncLLMManager":
         load_dotenv(Path(__file__).with_name(".env"), override=True)
@@ -47,15 +48,18 @@ class AsyncLLMManager:
             raise ValueError(message.removeprefix("Value error, ")) from error
         return cls(config)
 
+    # Método para obtener el proveedor del manager
     @property
     def provider(self) -> Provider:
         return self._config.provider
 
+    # Método para obtener el cliente del manager
     @property
     def client(self) -> BaseLLMClient:
         return self._client
 
-    def _build_client(self, config: LLMConfig) -> BaseLLMClient:
+    # Método para construir el cliente del manager
+    def _build_client(self, config: LLMConfig) -> BaseLLMClient:       
         if config.provider is Provider.OPENAI:
             assert config.openai_api_key is not None
             return OpenAIClient(
@@ -74,17 +78,19 @@ class AsyncLLMManager:
             model=config.google_model,
         )
 
+    # Método para generar una respuesta
     async def generate(
         self,
         messages: list[ChatMessage],
         params: ModelParams | None = None,
     ) -> ModelResponse:
-        return await self._client.generate(messages, params)
+        return await self._client.generate(messages, params) # Retorna la respuesta generada
 
+    # Método para generar una respuesta en streaming
     async def generate_stream(
         self,
         messages: list[ChatMessage],
         params: ModelParams | None = None,
     ) -> AsyncIterator[str]:
-        async for token in self._client.generate_stream(messages, params):
-            yield token
+        async for token in self._client.generate_stream(messages, params): # Genera la respuesta en streaming
+            yield token # Retorna el token generado
