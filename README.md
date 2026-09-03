@@ -1,92 +1,36 @@
 # Unified Async LLM Client
 
-Cliente asíncrono unificado para llamar a **OpenAI** o **Anthropic** con la misma interfaz. Soporta generación completa, streaming de tokens, validación con Pydantic y errores controlados (red, rate limit, API key inválida).
+Cliente async para OpenAI, Anthropic y Google (Gemini), con la misma interfaz, streaming y validación con Pydantic.
 
-## Requisitos
+## Setup
 
-- Python 3.12
-- Una API key de OpenAI y/o Anthropic
-
-## Instalación
-
-```bash
-python -m venv .venv
-```
-
-Windows:
+Python 3.12.
 
 ```powershell
+python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Linux / macOS:
+En Linux/macOS: `source .venv/bin/activate` y `cp .env.example .env`.
 
-```bash
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-```
-
-Edita `.env` y completa las keys. El archivo `.env` no se versiona.
+Completá las keys en `.env`. Ese archivo no se sube al repo.
 
 ## Variables de entorno
 
-| Variable | Obligatoria | Descripción |
-| --- | --- | --- |
-| `LLM_PROVIDER` | Sí | `openai` o `anthropic` |
-| `OPENAI_API_KEY` | Si el proveedor es OpenAI | Key del dashboard de OpenAI |
-| `ANTHROPIC_API_KEY` | Si el proveedor es Anthropic | Key del dashboard de Anthropic |
-| `OPENAI_MODEL` | No | Default: `gpt-4o-mini` |
-| `ANTHROPIC_MODEL` | No | Default: `claude-3-5-sonnet-latest` |
+- `LLM_PROVIDER`: `openai`, `anthropic` o `google`
+- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY`: la del proveedor que elijas
+- Modelos opcionales: `OPENAI_MODEL` (`gpt-4o-mini`), `ANTHROPIC_MODEL` (`claude-3-5-sonnet-latest`), `GOOGLE_MODEL` (`gemini-3.6-flash`)
 
-## Cómo ejecutar la prueba
+## Cómo probarlo
 
-Desde la raíz del repositorio, con el venv activo y el `.env` configurado:
-
-```bash
+```powershell
 python main.py
 ```
 
-El script pregunta **"¿Qué es la entropía?"** dos veces:
+Hace la pregunta "¿Qué es la entropía?" en modo normal y en streaming. Si falla la API (key, red, rate limit), muestra un error y no corta el proceso.
 
-1. **Modo normal**: espera la respuesta completa y la imprime.
-2. **Modo streaming**: imprime los tokens a medida que llegan (`yield` + `async for`).
+Se agrego GOOGLE como proveedor para poder hacer una prueba con un proveedor con el cual tengo tokens.
 
-Si falta la API key, hay un límite de cuota o un error de red, el proceso **no crashea**: se muestra un mensaje de error controlado.
-
-Para probar el otro proveedor, cambia `LLM_PROVIDER` en `.env` y vuelve a correr `python main.py`.
-
-## Estructura
-
-| Archivo | Rol |
-| --- | --- |
-| `schemas.py` | Modelos Pydantic: `ChatMessage`, `ModelParams` (temperatura 0–2, `max_tokens`), `ModelResponse`, `LLMConfig` |
-| `base.py` | `BaseLLMClient` abstracto (`generate` / `generate_stream`) + retry y mapeo de errores |
-| `openai_client.py` | `OpenAIClient` con `AsyncOpenAI` |
-| `anthropic_client.py` | `AnthropicClient` con `AsyncAnthropic` |
-| `manager.py` | `AsyncLLMManager`: elige el proveedor según `LLM_PROVIDER` |
-| `main.py` | Script de validación (modo normal + streaming) |
-| `.env.example` | Plantilla de variables de entorno |
-
-## Uso rápido en código
-
-```python
-import asyncio
-from manager import AsyncLLMManager
-from schemas import ChatMessage, ModelParams
-
-async def demo() -> None:
-    manager = AsyncLLMManager.from_env()
-    messages = [ChatMessage(role="user", content="¿Qué es la entropía?")]
-    params = ModelParams(temperature=0.5, max_tokens=300)
-
-    response = await manager.generate(messages, params)
-    print(response.content)
-
-    async for token in manager.generate_stream(messages, params):
-        print(token, end="", flush=True)
-
-asyncio.run(demo())
-```
+Para cambiar de proveedor, editá `LLM_PROVIDER` en `.env` y volvé a correr el script.

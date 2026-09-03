@@ -1,8 +1,6 @@
 import asyncio
 import sys
 
-from dotenv import load_dotenv
-
 from manager import AsyncLLMManager
 from schemas import ChatMessage, ModelParams
 
@@ -29,7 +27,6 @@ async def run_streaming(manager: AsyncLLMManager, messages: list[ChatMessage], p
 
 
 async def main() -> None:
-    load_dotenv()
     try:
         manager = AsyncLLMManager.from_env()
     except ValueError as error:
@@ -38,7 +35,7 @@ async def main() -> None:
 
     print(f"Proveedor activo: {manager.provider.value}\n")
     messages = [ChatMessage(role="user", content=PROMPT)]
-    params = ModelParams(temperature=0.5, max_tokens=300)
+    params = ModelParams(temperature=0.5, max_tokens=2048)
 
     await run_normal(manager, messages, params)
     await run_streaming(manager, messages, params)

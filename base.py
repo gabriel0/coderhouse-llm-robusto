@@ -5,6 +5,7 @@ from typing import TypeVar
 
 import anthropic
 import openai
+from google.genai import errors as genai_errors
 
 from schemas import ChatMessage, ModelParams, ModelResponse
 
@@ -39,10 +40,21 @@ _NETWORK_ERRORS: tuple[type[BaseException], ...] = (
 )
 
 
+def _is_google_auth_error(error: Exception) -> bool:
+    return isinstance(error, genai_errors.ClientError) and error.code in (401, 403)
+
+
+def _is_google_rate_limit(error: Exception) -> bool:
+    if not isinstance(error, genai_errors.APIError):
+        return False
+    status = (error.status or "").upper()
+    return error.code == 429 or status == "RESOURCE_EXHAUSTED"
+
+
 def format_llm_error(error: Exception) -> str:
-    if isinstance(error, _AUTH_ERRORS):
+    if isinstance(error, _AUTH_ERRORS) or _is_google_auth_error(error):
         return "API key inválida o ausente."
-    if isinstance(error, _RATE_LIMIT_ERRORS):
+    if isinstance(error, _RATE_LIMIT_ERRORS) or _is_google_rate_limit(error):
         return "Límite de tasa (rate limit) alcanzado. Intenta de nuevo más tarde."
     if isinstance(error, _NETWORK_ERRORS):
         return "Error de red al contactar al proveedor."
@@ -50,8 +62,10 @@ def format_llm_error(error: Exception) -> str:
 
 
 def is_retryable(error: Exception) -> bool:
-    if isinstance(error, _AUTH_ERRORS):
+    if isinstance(error, _AUTH_ERRORS) or _is_google_auth_error(error):
         return False
+    if _is_google_rate_limit(error) or isinstance(error, genai_errors.ServerError):
+        return True
     return isinstance(error, _RETRYABLE)
 
 
