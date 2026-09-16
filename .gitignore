@@ -157,6 +157,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# Notas locales (no forman parte de la entrega)
+notas_locales.md
+
 # Spyder project settings
 .spyderproject
 .spyproject
